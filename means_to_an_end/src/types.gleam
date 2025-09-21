@@ -1,7 +1,5 @@
-import gleam/time/timestamp.{type Timestamp}
-
 pub type TimedPrice {
-  TimedPrice(ts: Timestamp, penies: Int)
+  TimedPrice(ts: Int, pennies: Int)
 }
 
 pub type RequestType {
