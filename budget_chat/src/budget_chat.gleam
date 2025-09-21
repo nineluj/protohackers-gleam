@@ -5,7 +5,7 @@ import server
 
 pub fn main() -> Nil {
   logging.configure()
-  logging.set_level(logging.Info)
+  logging.set_level(logging.Debug)
 
   logging.log(Info, "Starting listener...")
   let assert Ok(_) =
