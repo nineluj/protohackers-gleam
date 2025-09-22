@@ -23,7 +23,7 @@ pub fn main() -> Nil {
   let selector = process.new_selector() |> process.select(subj)
 
   let assert Ok(_) =
-    glisten.new(server.create_on_init(subj, selector), server.listener)
+    glisten.new(server.create_on_init(subj, selector), server.handler)
     |> glisten.with_close(server.on_close)
     |> glisten.bind("0.0.0.0")
     |> glisten.start(33_337)

@@ -74,7 +74,7 @@ fn handle_name_setting(
   }
 }
 
-pub fn listener(
+pub fn handler(
   state: ServerState,
   msg: glisten.Message(Command),
   conn: glisten.Connection(Command),
