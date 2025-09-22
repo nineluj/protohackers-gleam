@@ -55,6 +55,15 @@ fn handle_name_setting(
         logging.Debug,
         "Accepted name " <> "[" <> requested_name <> "]",
       )
+      let assert Ok(_) =
+        // todo: this is just for testing, replace this with the list of
+        // already connected users for the final implementation
+        glisten.send(
+          conn,
+          bytes_tree.from_string(
+            "Name: " <> "[" <> requested_name <> "] was accepted\n",
+          ),
+        )
       glisten.continue(ServerState(
         state.subject,
         state.remote_address,
