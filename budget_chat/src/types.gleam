@@ -1,8 +1,10 @@
 import gleam/erlang/process
+import group_registry
 
 pub type ServerState {
   ServerState(
-    subject: process.Subject(Command),
+    registry: group_registry.GroupRegistry(ChatMessage),
+    chat_subject: process.Subject(ChatMessage),
     remote_address: String,
     connection_state: ConnectionState,
   )
@@ -13,6 +15,8 @@ pub type ConnectionState {
   RegisteredUserConnection(username: String)
 }
 
-pub type Command {
-  SendMessage(sender: String, message: String)
+pub type ChatMessage {
+  UserMessage(sender: String, message: String)
+  UserJoined(username: String)
+  UserLeft(username: String)
 }
