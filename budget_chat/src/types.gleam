@@ -1,4 +1,5 @@
 import gleam/erlang/process
+import gleam/option
 import group_registry
 
 pub type ServerState {
@@ -19,4 +20,11 @@ pub type ChatMessage {
   UserMessage(sender: String, message: String)
   UserJoined(username: String)
   UserLeft(username: String)
+}
+
+pub type HandlerResponse {
+  HandlerResponse(
+    new_state: ServerState,
+    message_to_send: option.Option(String),
+  )
 }
