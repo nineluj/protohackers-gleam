@@ -68,7 +68,6 @@ pub fn handler(
 
       // remove the trailing newline
       let msg = string.slice(msg, 0, string.length(msg) - 1)
-
       protocol.handle_packet_message(state, msg)
     }
     User(cmd) -> {

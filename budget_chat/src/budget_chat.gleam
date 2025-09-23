@@ -27,7 +27,6 @@ pub fn main() -> Nil {
   // - https://github.com/rawhat/glisten/issues/23#issuecomment-2438887228
   // - https://hexdocs.pm/group_registry/index.html
   // - https://hexdocs.pm/gleam_erlang/gleam/erlang/process.html#Selector
-  // let subj = process.new_subject()
 
   let registry_name = process.new_name("chat_registry")
   let assert Ok(_) =

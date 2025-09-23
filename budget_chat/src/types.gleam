@@ -28,3 +28,8 @@ pub type HandlerResponse {
     message_to_send: option.Option(String),
   )
 }
+
+pub type UserTrackerMessage {
+  UserChatMessage(message: ChatMessage)
+  QueryUsers(process.Subject(List(String)))
+}
