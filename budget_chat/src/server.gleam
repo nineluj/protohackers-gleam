@@ -18,7 +18,7 @@ fn send_username_prompt_message(conn: glisten.Connection(a)) {
   glisten.send(conn, bytes_tree.from_string(greeting_message))
 }
 
-pub fn create_on_init(subj: Subject(Command), selector: Selector(Command)) {
+pub fn create_on_init(subj: Subject(Command)) {
   fn(conn: glisten.Connection(a)) -> #(ServerState, Option(Selector(Command))) {
     // Log the connection info
     let remote_address = get_client_source_string(conn)
@@ -26,6 +26,8 @@ pub fn create_on_init(subj: Subject(Command), selector: Selector(Command)) {
       logging.Info,
       "New connection established from " <> remote_address,
     )
+
+    let selector = process.new_selector() |> process.select(subj)
 
     let assert Ok(_) = send_username_prompt_message(conn)
     #(ServerState(subj, remote_address, UnregisteredConnection), Some(selector))

@@ -22,10 +22,9 @@ pub fn main() -> Nil {
   // - https://github.com/rawhat/glisten/issues/23#issuecomment-2438887228
   // - https://hexdocs.pm/gleam_erlang/gleam/erlang/process.html#Selector
   let subj = process.new_subject()
-  let selector = process.new_selector() |> process.select(subj)
 
   let assert Ok(_) =
-    glisten.new(server.create_on_init(subj, selector), server.handler)
+    glisten.new(server.create_on_init(subj), server.handler)
     |> glisten.with_close(server.on_close)
     |> glisten.bind("0.0.0.0")
     |> glisten.start(33_337)
