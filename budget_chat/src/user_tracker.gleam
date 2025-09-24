@@ -1,3 +1,6 @@
+/// The user tracker is responsible for recording the users that join and leave,
+/// and providing that information through a query subject so that each new client
+/// can be made aware of all the existing users.
 import gleam/erlang/process
 import gleam/list
 import gleam/otp/actor
@@ -9,15 +12,22 @@ pub fn register(
   registry: group_registry.GroupRegistry(types.ChatMessage),
 ) -> process.Subject(UserTrackerMessage) {
   let query_subject = process.new_subject()
+  let message_subject = process.new_subject()
+
+  // use the selector so that the actor can listen to query requests
+  // and UserChatMessages
+  let selector =
+    process.new_selector()
+    |> process.select(query_subject)
+    |> process.select_map(message_subject, types.UserChatMessage)
 
   let assert Ok(user_tracker_actor) =
     actor.new([])
     |> actor.on_message(handler)
+    // this needs an actor.Initialised, so it doesn't work at the moment
+    |> actor.selecting(selector)
     |> actor.start()
 
-  // the type sent here is not UserTrackerMessage since messages come from
-  // the server actors that only send ChatMessage. Can we use a selector
-  // to accept either?
   group_registry.join(registry, protocol.chat_room, user_tracker_actor.pid)
 
   query_subject
