@@ -14,10 +14,9 @@ pub fn register(
   registry: group_registry.GroupRegistry(types.ChatMessage),
 ) -> process.Subject(UserTrackerMessage) {
   let query_subject = process.new_subject()
-  // let message_subject = process.new_subject()
 
   let assert Ok(_) =
-    // copied from here:
+    // based on example from here:
     // https://github.com/lustre-labs/lustre/blob/d4eb9334a9e67a645c9f9dd19c6207b7576dc9f1/src/lustre/runtime/server/runtime.gleam#L62
     actor.new_with_initialiser(500, fn(self) {
       let pid = process.self()
