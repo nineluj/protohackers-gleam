@@ -4,7 +4,9 @@
 import gleam/erlang/process
 import gleam/list
 import gleam/otp/actor
+import gleam/string
 import group_registry
+import logging
 import protocol
 import types.{type UserTrackerMessage}
 
@@ -12,28 +14,38 @@ pub fn register(
   registry: group_registry.GroupRegistry(types.ChatMessage),
 ) -> process.Subject(UserTrackerMessage) {
   let query_subject = process.new_subject()
-  let message_subject = process.new_subject()
+  // let message_subject = process.new_subject()
 
-  // use the selector so that the actor can listen to query requests
-  // and UserChatMessages
-  let selector =
-    process.new_selector()
-    |> process.select(query_subject)
-    |> process.select_map(message_subject, types.UserChatMessage)
+  let assert Ok(_) =
+    // copied from here:
+    // https://github.com/lustre-labs/lustre/blob/d4eb9334a9e67a645c9f9dd19c6207b7576dc9f1/src/lustre/runtime/server/runtime.gleam#L62
+    actor.new_with_initialiser(500, fn(self) {
+      let pid = process.self()
+      let chat_subject = group_registry.join(registry, protocol.chat_room, pid)
 
-  let assert Ok(user_tracker_actor) =
-    actor.new([])
+      logging.log(logging.Info, "UserTracker joined chat room")
+
+      let selector =
+        process.new_selector()
+        |> process.select(query_subject)
+        |> process.select_map(chat_subject, types.UserChatMessage)
+
+      actor.initialised([])
+      |> actor.selecting(selector)
+      |> actor.returning(self)
+      |> Ok
+    })
     |> actor.on_message(handler)
-    // this needs an actor.Initialised, so it doesn't work at the moment
-    |> actor.selecting(selector)
     |> actor.start()
-
-  group_registry.join(registry, protocol.chat_room, user_tracker_actor.pid)
 
   query_subject
 }
 
 pub fn handler(state: List(String), message: UserTrackerMessage) {
+  logging.log(
+    logging.Debug,
+    "UserTracker: " <> string.inspect(message) <> " received",
+  )
   let new_state = case message {
     types.QueryUsers(reply) -> {
       actor.send(reply, state)

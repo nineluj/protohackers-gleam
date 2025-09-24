@@ -24,10 +24,14 @@ fn broadcast_to_others(
 }
 
 fn get_current_users_string(state: ServerState) {
+  logging.log(logging.Debug, "Querying current users...")
   // this can panic
-  let users = process.call(state.user_query_subject, 200, types.QueryUsers)
-  users
-  |> string.join(", ")
+  let users = process.call(state.user_query_subject, 1000, types.QueryUsers)
+  logging.log(logging.Debug, "Got users: " <> string.inspect(users))
+  case list.length(users) {
+    0 -> "no one"
+    _ -> users |> string.join(", ")
+  }
 }
 
 pub fn handle_name_setting(
@@ -39,7 +43,6 @@ pub fn handle_name_setting(
   logging.log(logging.Debug, "Got name: [" <> requested_name <> "]")
   case validate_name(requested_name) {
     True -> {
-      // todo, display existing client names
       logging.log(
         logging.Info,
         "User "
