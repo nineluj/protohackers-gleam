@@ -4,6 +4,7 @@ import glisten
 import group_registry
 import logging.{Info}
 import server
+import user_tracker
 
 pub fn main() -> Nil {
   logging.configure()
@@ -35,9 +36,13 @@ pub fn main() -> Nil {
     |> supervisor.start()
 
   let registry = group_registry.get_registry(registry_name)
+  let user_query_subject = user_tracker.register(registry)
 
   let assert Ok(_) =
-    glisten.new(server.create_on_init(registry), server.handler)
+    glisten.new(
+      server.create_on_init(registry, user_query_subject),
+      server.handler,
+    )
     |> glisten.with_close(server.on_close)
     |> glisten.bind("0.0.0.0")
     |> glisten.start(33_337)

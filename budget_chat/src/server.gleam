@@ -18,7 +18,10 @@ fn send_username_prompt_message(conn: glisten.Connection(a)) {
   glisten.send(conn, bytes_tree.from_string(greeting_message))
 }
 
-pub fn create_on_init(registry: group_registry.GroupRegistry(ChatMessage)) {
+pub fn create_on_init(
+  registry: group_registry.GroupRegistry(ChatMessage),
+  user_query_subject: process.Subject(types.UserTrackerMessage),
+) {
   fn(conn: glisten.Connection(a)) -> #(
     ServerState,
     Option(Selector(ChatMessage)),
@@ -39,6 +42,7 @@ pub fn create_on_init(registry: group_registry.GroupRegistry(ChatMessage)) {
       ServerState(
         registry,
         chat_subject,
+        user_query_subject,
         remote_address,
         UnregisteredConnection,
       ),
@@ -52,6 +56,7 @@ pub fn create_on_init(registry: group_registry.GroupRegistry(ChatMessage)) {
 // using glisten.close()
 pub fn on_close(state: ServerState) -> Nil {
   logging.log(logging.Info, "Connection closed from " <> state.remote_address)
+  group_registry.leave(state.registry, protocol.chat_room, [process.self()])
   protocol.on_close(state)
 }
 
@@ -78,6 +83,12 @@ pub fn handler(
   case handler_response {
     Error(error_msg) -> {
       let assert Ok(_) = glisten.send(conn, bytes_tree.from_string(error_msg))
+      // todo: this logs here and in on_close, which makes for some not very intuitive logs
+      logging.log(
+        logging.Info,
+        "Ending connection with " <> state.remote_address,
+      )
+      on_close(state)
       glisten.stop()
     }
     Ok(types.HandlerResponse(new_state, message_to_send)) -> {

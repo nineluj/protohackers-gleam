@@ -6,6 +6,7 @@ pub type ServerState {
   ServerState(
     registry: group_registry.GroupRegistry(ChatMessage),
     chat_subject: process.Subject(ChatMessage),
+    user_query_subject: process.Subject(UserTrackerMessage),
     remote_address: String,
     connection_state: ConnectionState,
   )

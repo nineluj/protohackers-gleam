@@ -1,6 +1,7 @@
 import gleam/erlang/process
 import gleam/list
-import gleam/option.{None}
+import gleam/option.{None, Some}
+import gleam/string
 import group_registry
 import logging
 import types.{
@@ -22,6 +23,13 @@ fn broadcast_to_others(
   |> list.each(fn(member) { process.send(member, message) })
 }
 
+fn get_current_users_string(state: ServerState) {
+  // this can panic
+  let users = process.call(state.user_query_subject, 200, types.QueryUsers)
+  users
+  |> string.join(", ")
+}
+
 pub fn handle_name_setting(
   state: ServerState,
   msg: String,
@@ -32,10 +40,6 @@ pub fn handle_name_setting(
   case validate_name(requested_name) {
     True -> {
       // todo, display existing client names
-      logging.log(
-        logging.Debug,
-        "Accepted name " <> "[" <> requested_name <> "]",
-      )
       logging.log(
         logging.Info,
         "User "
@@ -51,14 +55,18 @@ pub fn handle_name_setting(
         UserJoined(requested_name),
       )
 
+      let current_users = get_current_users_string(state)
+      let response = "* The room contains: " <> current_users <> "\n"
+
       Ok(HandlerResponse(
         ServerState(
           state.registry,
           state.chat_subject,
+          state.user_query_subject,
           state.remote_address,
           RegisteredUserConnection(requested_name),
         ),
-        None,
+        Some(response),
       ))
     }
     False -> {
@@ -122,7 +130,7 @@ pub fn handle_chat_message(
         UserJoined(user) -> "* " <> user <> " has entered the room\n"
         UserLeft(user) -> "* " <> user <> " has left the room\n"
       }
-      Ok(HandlerResponse(state, option.Some(response_message)))
+      Ok(HandlerResponse(state, Some(response_message)))
     }
   }
 }
