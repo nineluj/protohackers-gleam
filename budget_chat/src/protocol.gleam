@@ -52,13 +52,16 @@ pub fn handle_name_setting(
           <> state.remote_address,
       )
 
+      // get the current users before joining since we want
+      // to show the current users
+      let current_users = get_current_users_string(state)
+
       broadcast_to_others(
         state.registry,
         state.chat_subject,
         UserJoined(requested_name),
       )
 
-      let current_users = get_current_users_string(state)
       let response = "* The room contains: " <> current_users <> "\n"
 
       Ok(HandlerResponse(

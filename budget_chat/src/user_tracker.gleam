@@ -13,9 +13,7 @@ import types.{type UserTrackerMessage}
 pub fn register(
   registry: group_registry.GroupRegistry(types.ChatMessage),
 ) -> process.Subject(UserTrackerMessage) {
-  let query_subject = process.new_subject()
-
-  let assert Ok(_) =
+  let assert Ok(started) =
     // based on example from here:
     // https://github.com/lustre-labs/lustre/blob/d4eb9334a9e67a645c9f9dd19c6207b7576dc9f1/src/lustre/runtime/server/runtime.gleam#L62
     actor.new_with_initialiser(500, fn(self) {
@@ -26,7 +24,7 @@ pub fn register(
 
       let selector =
         process.new_selector()
-        |> process.select(query_subject)
+        |> process.select(self)
         |> process.select_map(chat_subject, types.UserChatMessage)
 
       actor.initialised([])
@@ -37,7 +35,7 @@ pub fn register(
     |> actor.on_message(handler)
     |> actor.start()
 
-  query_subject
+  started.data
 }
 
 pub fn handler(state: List(String), message: UserTrackerMessage) {
