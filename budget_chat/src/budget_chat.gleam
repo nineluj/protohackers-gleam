@@ -8,7 +8,7 @@ import user_tracker
 
 pub fn main() -> Nil {
   logging.configure()
-  logging.set_level(logging.Debug)
+  logging.set_level(logging.Info)
   logging.log(Info, "Starting server...")
 
   // Here's how the message flow works:

@@ -14,7 +14,7 @@ import types.{
   type ChatMessage, type ServerState, ServerState, UnregisteredConnection,
 }
 
-const greeting_message = "Welcome to budgetchat! What can I call you? Enter name: "
+const greeting_message = "Welcome to budgetchat! What can I call you?\n"
 
 fn send_username_prompt_message(conn: glisten.Connection(a)) {
   glisten.send(conn, bytes_tree.from_string(greeting_message))
@@ -29,14 +29,15 @@ fn splitter(data: BitArray) -> Result(message_buffer.Split(String), String) {
         // errors when it's unable to split
         Error(_) -> {
           logging.log(
-            logging.Info,
+            logging.Debug,
             "Didn't get all the data, waiting for more...",
           )
           Ok(Split(message: option.None, remaining: data))
         }
         Ok(#(captured, rest)) ->
           Ok(Split(
-            message: option.Some(captured),
+            // trim to remove potential \r from network stream
+            message: option.Some(string.trim_end(captured)),
             remaining: bit_array.from_string(rest),
           ))
       }
