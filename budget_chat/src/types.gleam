@@ -1,13 +1,18 @@
 import gleam/erlang/process
 import gleam/option
 import group_registry
+import message_buffer.{type MessageBuffer}
 
 pub type ServerState {
   ServerState(
+    // todo: move the first three into ServerMessaging type
     registry: group_registry.GroupRegistry(ChatMessage),
     chat_subject: process.Subject(ChatMessage),
     user_query_subject: process.Subject(UserTrackerMessage),
+    message_buffer: MessageBuffer(String, String),
     remote_address: String,
+    // todo: move this into a separate AppState type, so that the protocol doesn't
+    // get exposed to the server specifics
     connection_state: ConnectionState,
   )
 }

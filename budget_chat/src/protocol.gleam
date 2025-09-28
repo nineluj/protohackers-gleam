@@ -69,6 +69,7 @@ pub fn handle_name_setting(
           state.registry,
           state.chat_subject,
           state.user_query_subject,
+          state.message_buffer,
           state.remote_address,
           RegisteredUserConnection(requested_name),
         ),
