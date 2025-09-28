@@ -11,7 +11,8 @@ import message_buffer.{Split}
 import protocol
 import protolib.{get_client_source_string}
 import types.{
-  type ChatMessage, type ServerState, ServerState, UnregisteredConnection,
+  type ChatMessage, type ServerState, ClientContext, ServerState,
+  UnregisteredConnection,
 }
 
 const greeting_message = "Welcome to budgetchat! What can I call you?\n"
@@ -67,12 +68,9 @@ pub fn create_on_init(
     let assert Ok(_) = send_username_prompt_message(conn)
     #(
       ServerState(
-        registry,
-        chat_subject,
-        user_query_subject,
-        message_buffer.new(splitter),
-        remote_address,
-        UnregisteredConnection,
+        ClientContext(message_buffer.new(splitter), remote_address),
+        types.ServerMessaging(registry, chat_subject, user_query_subject),
+        types.AppState(UnregisteredConnection),
       ),
       Some(selector),
     )
@@ -85,10 +83,12 @@ pub fn create_on_init(
 pub fn on_close(state: ServerState) -> Nil {
   logging.log(
     logging.Info,
-    "Connection terminated for " <> state.remote_address,
+    "Connection terminated for " <> state.client_ctx.remote_address,
   )
-  group_registry.leave(state.registry, protocol.chat_room, [process.self()])
-  protocol.on_close(state)
+  group_registry.leave(state.messaging.registry, protocol.chat_room, [
+    process.self(),
+  ])
+  protocol.on_close(state.app_state, state.messaging)
 }
 
 pub fn process_handler_response(state: ServerState, conn, handler_response) {
@@ -98,7 +98,7 @@ pub fn process_handler_response(state: ServerState, conn, handler_response) {
       // todo: this logs here and in on_close, which makes for some not very intuitive logs
       logging.log(
         logging.Info,
-        "Ending connection with " <> state.remote_address,
+        "Ending connection with " <> state.client_ctx.remote_address,
       )
       on_close(state)
       Error(error_msg)
@@ -111,7 +111,7 @@ pub fn process_handler_response(state: ServerState, conn, handler_response) {
         }
         option.None -> Nil
       }
-      Ok(new_state)
+      Ok(ServerState(state.client_ctx, state.messaging, new_state))
     }
   }
 }
@@ -131,13 +131,13 @@ pub fn handler(
   logging.log(logging.Debug, "Handler received " <> string.inspect(msg))
   case msg {
     User(cmd) -> {
-      protocol.handle_chat_message(state, cmd)
+      protocol.handle_chat_message(state.app_state, cmd)
       |> process_handler_response(state, conn, _)
       |> handle_final_state
     }
 
     Packet(data) -> {
-      case message_buffer.do_split(state.message_buffer, data) {
+      case message_buffer.do_split(state.client_ctx.message_buffer, data) {
         Error(e) -> Error(e) |> handle_final_state
 
         Ok(#(new_mb, msg_list)) -> {
@@ -145,18 +145,19 @@ pub fn handler(
             msg_list,
             // add the new message_buffer to the ServerState
             Ok(ServerState(
-              state.registry,
-              state.chat_subject,
-              state.user_query_subject,
-              new_mb,
-              state.remote_address,
-              state.connection_state,
+              ClientContext(new_mb, state.client_ctx.remote_address),
+              state.messaging,
+              state.app_state,
             )),
             fn(state: Result(ServerState, String), msg: String) {
               case state {
                 Error(_) -> state
                 Ok(state) -> {
-                  protocol.handle_packet_message(state, msg)
+                  protocol.handle_packet_message(
+                    state.app_state,
+                    state.messaging,
+                    msg,
+                  )
                   |> process_handler_response(state, conn, _)
                 }
               }

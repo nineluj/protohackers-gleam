@@ -5,28 +5,25 @@ import gleam/string
 import group_registry
 import logging
 import types.{
-  type ChatMessage, type HandlerResponse, type ServerState, HandlerResponse,
-  RegisteredUserConnection, ServerState, UnregisteredConnection, UserJoined,
+  type ChatMessage, type HandlerResponse, type ServerMessaging, AppState,
+  HandlerResponse, RegisteredUserConnection, UnregisteredConnection, UserJoined,
   UserLeft, UserMessage,
 }
 import validation.{validate_name}
 
 pub const chat_room = "main_chat"
 
-fn broadcast_to_others(
-  registry: group_registry.GroupRegistry(ChatMessage),
-  sender_subject: process.Subject(ChatMessage),
-  message: ChatMessage,
-) {
+fn broadcast_to_others(messaging: ServerMessaging, message: ChatMessage) {
+  let types.ServerMessaging(registry, sender_subject, _) = messaging
   group_registry.members(registry, chat_room)
   |> list.filter(fn(member) { member != sender_subject })
   |> list.each(fn(member) { process.send(member, message) })
 }
 
-fn get_current_users_string(state: ServerState) {
+fn get_current_users_string(messaging: ServerMessaging) {
   logging.log(logging.Debug, "Querying current users...")
   // this can panic
-  let users = process.call(state.user_query_subject, 1000, types.QueryUsers)
+  let users = process.call(messaging.user_query_subject, 1000, types.QueryUsers)
   logging.log(logging.Debug, "Got users: " <> string.inspect(users))
   case list.length(users) {
     0 -> "no one"
@@ -35,7 +32,7 @@ fn get_current_users_string(state: ServerState) {
 }
 
 pub fn handle_name_setting(
-  state: ServerState,
+  messaging: ServerMessaging,
   msg: String,
 ) -> Result(HandlerResponse, String) {
   let requested_name = msg
@@ -43,36 +40,16 @@ pub fn handle_name_setting(
   logging.log(logging.Debug, "Got name: [" <> requested_name <> "]")
   case validate_name(requested_name) {
     True -> {
-      logging.log(
-        logging.Info,
-        "User "
-          <> "["
-          <> requested_name
-          <> "] connected from "
-          <> state.remote_address,
-      )
-
       // get the current users before joining since we want
       // to show the current users
-      let current_users = get_current_users_string(state)
+      let current_users = get_current_users_string(messaging)
 
-      broadcast_to_others(
-        state.registry,
-        state.chat_subject,
-        UserJoined(requested_name),
-      )
+      broadcast_to_others(messaging, UserJoined(requested_name))
 
       let response = "* The room contains: " <> current_users <> "\n"
 
       Ok(HandlerResponse(
-        ServerState(
-          state.registry,
-          state.chat_subject,
-          state.user_query_subject,
-          state.message_buffer,
-          state.remote_address,
-          RegisteredUserConnection(requested_name),
-        ),
+        requested_name |> RegisteredUserConnection |> AppState,
         Some(response),
       ))
     }
@@ -86,15 +63,11 @@ pub fn handle_name_setting(
   }
 }
 
-pub fn on_close(state: types.ServerState) {
+pub fn on_close(app_state: types.AppState, messaging) {
   // If user was registered, broadcast that they left
-  case state.connection_state {
+  case app_state.connection_state {
     RegisteredUserConnection(username) -> {
-      broadcast_to_others(
-        state.registry,
-        state.chat_subject,
-        UserLeft(username),
-      )
+      broadcast_to_others(messaging, UserLeft(username))
     }
     UnregisteredConnection -> Nil
   }
@@ -102,23 +75,20 @@ pub fn on_close(state: types.ServerState) {
 
 /// Handle a message from a user
 pub fn handle_packet_message(
-  state: ServerState,
+  state: types.AppState,
+  messaging: ServerMessaging,
   msg: String,
 ) -> Result(HandlerResponse, String) {
   case state.connection_state {
     UnregisteredConnection -> {
-      handle_name_setting(state, msg)
+      handle_name_setting(messaging, msg)
     }
     RegisteredUserConnection(username:) -> {
       logging.log(
         logging.Info,
         "User [" <> username <> "] sent message: " <> msg,
       )
-      broadcast_to_others(
-        state.registry,
-        state.chat_subject,
-        UserMessage(username, msg),
-      )
+      broadcast_to_others(messaging, UserMessage(username, msg))
       Ok(HandlerResponse(state, None))
     }
   }
@@ -126,7 +96,7 @@ pub fn handle_packet_message(
 
 /// Handle a message created by another actor
 pub fn handle_chat_message(
-  state: ServerState,
+  state: types.AppState,
   cmd: ChatMessage,
 ) -> Result(HandlerResponse, String) {
   case state.connection_state {
