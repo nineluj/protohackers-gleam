@@ -95,7 +95,7 @@ pub fn process_handler_response(state: ServerState, conn, handler_response) {
   case handler_response {
     Error(error_msg) -> {
       let assert Ok(_) = glisten.send(conn, bytes_tree.from_string(error_msg))
-      // todo: this logs here and in on_close, which makes for some not very intuitive logs
+      // this logs here and in on_close, which makes for some not very intuitive logs
       logging.log(
         logging.Info,
         "Ending connection with " <> state.client_ctx.remote_address,
