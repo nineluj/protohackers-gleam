@@ -44,7 +44,7 @@ pub fn handle_name_setting(
       // to show the current users
       let current_users = get_current_users_string(messaging)
 
-      broadcast_to_others(messaging, UserJoined(requested_name))
+      broadcast_to_others(messaging, UserJoined(requested_name, process.self()))
 
       let response = "* The room contains: " <> current_users <> "\n"
 
@@ -104,7 +104,7 @@ pub fn handle_chat_message(
     RegisteredUserConnection(_) -> {
       let response_message = case cmd {
         UserMessage(sender, msg) -> "[" <> sender <> "] " <> msg <> "\n"
-        UserJoined(user) -> "* " <> user <> " has entered the room\n"
+        UserJoined(user, _pid) -> "* " <> user <> " has entered the room\n"
         UserLeft(user) -> "* " <> user <> " has left the room\n"
       }
       Ok(HandlerResponse(state, Some(response_message)))
