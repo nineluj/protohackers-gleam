@@ -1,10 +1,10 @@
+import budget_chat/server
+import budget_chat/user_tracker
 import gleam/erlang/process
 import gleam/otp/static_supervisor as supervisor
 import glisten
 import group_registry
 import logging.{Info}
-import server
-import user_tracker
 
 pub fn main() -> Nil {
   logging.configure()

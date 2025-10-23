@@ -1,3 +1,8 @@
+import budget_chat/protocol
+import budget_chat/types.{
+  type ChatMessage, type ServerState, ClientContext, ServerState,
+  UnregisteredConnection,
+}
 import gleam/bit_array
 import gleam/bytes_tree
 import gleam/erlang/process.{type Selector}
@@ -8,12 +13,7 @@ import glisten.{Packet, User}
 import group_registry
 import logging
 import message_buffer.{Split}
-import protocol
 import protolib.{get_client_source_string}
-import types.{
-  type ChatMessage, type ServerState, ClientContext, ServerState,
-  UnregisteredConnection,
-}
 
 const greeting_message = "Welcome to budgetchat! What can I call you?\n"
 

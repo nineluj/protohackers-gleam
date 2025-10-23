@@ -1,15 +1,15 @@
+import budget_chat/types.{
+  type ChatMessage, type HandlerResponse, type ServerMessaging, AppState,
+  HandlerResponse, RegisteredUserConnection, UnregisteredConnection, UserJoined,
+  UserLeft, UserMessage,
+}
+import budget_chat/validation.{validate_name}
 import gleam/erlang/process
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
 import group_registry
 import logging
-import types.{
-  type ChatMessage, type HandlerResponse, type ServerMessaging, AppState,
-  HandlerResponse, RegisteredUserConnection, UnregisteredConnection, UserJoined,
-  UserLeft, UserMessage,
-}
-import validation.{validate_name}
 
 pub const chat_room = "main_chat"
 

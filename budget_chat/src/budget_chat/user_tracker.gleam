@@ -1,14 +1,14 @@
 /// The user tracker is responsible for recording the users that join and leave,
 /// and providing that information through a query subject so that each new client
 /// can be made aware of all the existing users.
+import budget_chat/protocol
+import budget_chat/types.{type UserTrackerMessage}
 import gleam/erlang/process
 import gleam/list
 import gleam/otp/actor
 import gleam/string
 import group_registry
 import logging
-import protocol
-import types.{type UserTrackerMessage}
 
 pub fn register(
   registry: group_registry.GroupRegistry(types.ChatMessage),
