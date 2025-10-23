@@ -37,7 +37,7 @@ pub type ConnectionState {
 
 pub type ChatMessage {
   UserMessage(sender: String, message: String)
-  UserJoined(username: String)
+  UserJoined(username: String, pid: process.Pid)
   UserLeft(username: String)
 }
 
@@ -48,4 +48,5 @@ pub type HandlerResponse {
 pub type UserTrackerMessage {
   UserChatMessage(message: ChatMessage)
   QueryUsers(process.Subject(List(String)))
+  UserProcessDown(process.Down)
 }
